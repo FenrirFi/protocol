@@ -171,6 +171,9 @@ contract Comptroller is ComptrollerV7Storage, ComptrollerInterface, ComptrollerE
      */
     function exitMarket(address cTokenAddress) external returns (uint) {
         CToken cToken = CToken(cTokenAddress);
+
+        oracle.updatePrice(cToken);
+
         /* Get sender tokensHeld and amountOwed underlying from the cToken */
         (uint oErr, uint tokensHeld, uint amountOwed, ) = cToken.getAccountSnapshot(msg.sender);
         require(oErr == 0, "exitMarket: getAccountSnapshot failed"); // semi-opaque error code
@@ -242,6 +245,8 @@ contract Comptroller is ComptrollerV7Storage, ComptrollerInterface, ComptrollerE
             return uint(Error.MARKET_NOT_LISTED);
         }
 
+        oracle.updatePrice(CToken(cToken));
+
         // Keep the flywheel moving
         updateCompSupplyIndex(cToken);
         distributeSupplierComp(cToken, minter);
@@ -277,6 +282,8 @@ contract Comptroller is ComptrollerV7Storage, ComptrollerInterface, ComptrollerE
      * @return 0 if the redeem is allowed, otherwise a semi-opaque error code (See ErrorReporter.sol)
      */
     function redeemAllowed(address cToken, address redeemer, uint redeemTokens) external returns (uint) {
+        oracle.updatePrice(CToken(cToken));
+
         uint allowed = redeemAllowedInternal(cToken, redeemer, redeemTokens);
         if (allowed != uint(Error.NO_ERROR)) {
             return allowed;
@@ -358,6 +365,8 @@ contract Comptroller is ComptrollerV7Storage, ComptrollerInterface, ComptrollerE
             assert(markets[cToken].accountMembership[borrower]);
         }
 
+        oracle.updatePrice(CToken(cToken));
+
         if (oracle.getUnderlyingPrice(CToken(cToken)) == 0) {
             return uint(Error.PRICE_ERROR);
         }
@@ -427,6 +436,8 @@ contract Comptroller is ComptrollerV7Storage, ComptrollerInterface, ComptrollerE
             return uint(Error.MARKET_NOT_LISTED);
         }
 
+        oracle.updatePrice(CToken(cToken));
+
         // Keep the flywheel moving
         Exp memory borrowIndex = Exp({mantissa: CToken(cToken).borrowIndex()});
         updateCompBorrowIndex(cToken, borrowIndex);
@@ -481,6 +492,9 @@ contract Comptroller is ComptrollerV7Storage, ComptrollerInterface, ComptrollerE
         if (!markets[cTokenBorrowed].isListed || !markets[cTokenCollateral].isListed) {
             return uint(Error.MARKET_NOT_LISTED);
         }
+
+        oracle.updatePrice(CToken(cTokenBorrowed));
+        oracle.updatePrice(CToken(cTokenCollateral));
 
         uint borrowBalance = CToken(cTokenBorrowed).borrowBalanceStored(borrower);
 
@@ -564,6 +578,9 @@ contract Comptroller is ComptrollerV7Storage, ComptrollerInterface, ComptrollerE
             return uint(Error.COMPTROLLER_MISMATCH);
         }
 
+        oracle.updatePrice(CToken(cTokenCollateral));
+        oracle.updatePrice(CToken(cTokenBorrowed));
+
         // Keep the flywheel moving
         updateCompSupplyIndex(cTokenCollateral);
         distributeSupplierComp(cTokenCollateral, borrower);
@@ -610,6 +627,8 @@ contract Comptroller is ComptrollerV7Storage, ComptrollerInterface, ComptrollerE
     function transferAllowed(address cToken, address src, address dst, uint transferTokens) external returns (uint) {
         // Pausing is a very serious situation - we revert to sound the alarms
         require(!transferGuardianPaused, "transfer is paused");
+
+        oracle.updatePrice(CToken(cToken));
 
         // Currently the only consideration is whether or not
         //  the src is allowed to redeem this many tokens
@@ -1462,6 +1481,6 @@ contract Comptroller is ComptrollerV7Storage, ComptrollerInterface, ComptrollerE
      * @return The address of COMP
      */
     function getCompAddress() public view returns (address) {
-        return 0xc00e94Cb662C3520282E6f5717214004A7f26888;
+        return 0xA919C7eDeAb294DD15939c443BCacA1FA1a1850f;
     }
 }

@@ -19,6 +19,7 @@ interface ComptrollerLensInterface {
     function compSupplySpeeds(address) external view returns (uint);
     function compBorrowSpeeds(address) external view returns (uint);
     function borrowCaps(address) external view returns (uint);
+    function getCompAddress() external view returns (address);
 }
 
 interface GovernorBravoInterface {
@@ -480,6 +481,15 @@ contract CompoundLens {
             });
         }
         return res;
+    }
+
+    function compAccrual(ComptrollerLensInterface comptroller, address account) public returns (uint claimed, uint pending) {
+        Comp comp = Comp(comptroller.getCompAddress());
+        uint initialBal = comp.balanceOf(account);
+        comptroller.claimComp(account);
+        uint finalBal = comp.balanceOf(account);
+        require(finalBal >= initialBal, "overflow");
+        return (finalBal - initialBal, comptroller.compAccrued(account));
     }
 
     function compareStrings(string memory a, string memory b) internal pure returns (bool) {

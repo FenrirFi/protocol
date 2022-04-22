@@ -13,4 +13,10 @@ contract PriceOracle {
       *  Zero means the price is unavailable.
       */
     function getUnderlyingPrice(CToken cToken) external view returns (uint);
+
+    /**
+      * @notice Update the price of an underlying asset
+      * @param cToken The cToken to update the underlying price of
+      */
+    function updatePrice(CToken cToken) external;
 }

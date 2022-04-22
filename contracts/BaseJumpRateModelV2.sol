@@ -11,6 +11,7 @@ contract BaseJumpRateModelV2 {
     using SafeMath for uint;
 
     event NewInterestParams(uint baseRatePerBlock, uint multiplierPerBlock, uint jumpMultiplierPerBlock, uint kink);
+    event OwnershipTransferred(address oldOwner, address newOwner);
 
     /**
      * @notice The address of the owner, i.e. the Timelock contract, which can update parameters directly
@@ -20,7 +21,7 @@ contract BaseJumpRateModelV2 {
     /**
      * @notice The approximate number of blocks per year that is assumed by the interest rate model
      */
-    uint public constant blocksPerYear = 2102400;
+    uint public constant blocksPerYear = 10519200;
 
     /**
      * @notice The multiplier of utilization rate that gives the slope of the interest rate
@@ -133,5 +134,11 @@ contract BaseJumpRateModelV2 {
         kink = kink_;
 
         emit NewInterestParams(baseRatePerBlock, multiplierPerBlock, jumpMultiplierPerBlock, kink);
+    }
+
+    function transferOwnership(address newOwner) external {
+        require(msg.sender == owner, "only the owner may call this function.");
+        emit OwnershipTransferred(owner, newOwner);
+        owner = newOwner;
     }
 }
