@@ -58,6 +58,9 @@ contract Comptroller is ComptrollerV7Storage, ComptrollerInterface, ComptrollerE
     /// @notice Emitted when COMP is distributed to a borrower
     event DistributedBorrowerComp(CToken indexed cToken, address indexed borrower, uint compDelta, uint compBorrowIndex);
 
+    /// @notice Emitted when user borrow cap is changed
+    event NewUserBorrowCap(uint oldUserBorrowCap, uint newUserBorrowCap);
+
     /// @notice Emitted when borrow cap for a cToken is changed
     event NewBorrowCap(CToken indexed cToken, uint newBorrowCap);
 
@@ -84,6 +87,8 @@ contract Comptroller is ComptrollerV7Storage, ComptrollerInterface, ComptrollerE
 
     // No collateralFactorMantissa may exceed this value
     uint internal constant collateralFactorMaxMantissa = 0.9e18; // 0.9
+
+    uint public userBorrowCap;
 
     constructor() public {
         admin = msg.sender;
@@ -371,8 +376,10 @@ contract Comptroller is ComptrollerV7Storage, ComptrollerInterface, ComptrollerE
             return uint(Error.PRICE_ERROR);
         }
 
+        uint borrowAmountUsd = mul_(borrowAmount, oracle.getUnderlyingPrice(CToken(cToken)));
 
         uint borrowCap = borrowCaps[cToken];
+
         // Borrow cap of 0 corresponds to unlimited borrowing
         if (borrowCap != 0) {
             uint totalBorrows = CToken(cToken).totalBorrows();
@@ -386,6 +393,34 @@ contract Comptroller is ComptrollerV7Storage, ComptrollerInterface, ComptrollerE
         }
         if (shortfall > 0) {
             return uint(Error.INSUFFICIENT_LIQUIDITY);
+        }
+
+        // User Borrow cap of 0 corresponds to unlimited borrowing
+        if (userBorrowCap != 0) {
+            // For each asset the account is in
+            CToken[] memory assets = accountAssets[borrower];
+            uint totalBorrowsUser;
+
+            for (uint i = 0; i < assets.length; i++) {
+                CToken asset = assets[i];
+
+                /* Get sender borrowBalance underlying from the cToken */
+                (uint oErr, , uint borrowBalance, ) = asset.getAccountSnapshot(borrower);
+                if (oErr != 0) { // semi-opaque error code, we assume NO_ERROR == 0 is invariant between upgrades
+                    return uint(Error.SNAPSHOT_ERROR); 
+                }
+
+                uint oraclePriceMantissa = oracle.getUnderlyingPrice(asset);
+                if (oraclePriceMantissa == 0) {
+                    return uint(Error.PRICE_ERROR);  
+                }
+                // uint oraclePrice = oraclePriceMantissa; 
+
+                // totalBorrowsUser += oraclePrice * borrowBalance
+                totalBorrowsUser = add_(mul_(oraclePriceMantissa, borrowBalance), totalBorrowsUser);
+            }
+            uint nextTotalBorrowsUser = add_(totalBorrowsUser, borrowAmountUsd);
+            require(nextTotalBorrowsUser <= userBorrowCap, "user borrow cap reached");
         }
 
         // Keep the flywheel moving
@@ -999,6 +1034,23 @@ contract Comptroller is ComptrollerV7Storage, ComptrollerInterface, ComptrollerE
          * Update market state block numbers
          */
          supplyState.block = borrowState.block = blockNumber;
+    }
+
+    /**
+      * @notice Sets the Borrow Cap at user level (in dollar value)
+      * @dev Admin function to set borrow cap for users
+      * @param newUserBorrowCap New user borrow cap, scaled by 1e18
+      * @return uint 0=success, otherwise a failure
+      */
+    function _setUserBorrowCap(uint newUserBorrowCap) external returns (uint) {
+        // Check caller is admin
+        require(msg.sender == admin, "only admin can set user borrow cap");
+
+        uint oldUserBorrowCap = userBorrowCap;
+        userBorrowCap = newUserBorrowCap;
+        emit NewUserBorrowCap(oldUserBorrowCap, userBorrowCap);
+
+        return uint(Error.NO_ERROR);
     }
 
 

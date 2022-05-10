@@ -156,6 +156,12 @@ contract ComptrollerV7Storage is ComptrollerV6Storage {
     /// @notice Flag indicating whether the function to fix COMP accruals has been executed (RE: proposal 62 bug)
     bool public proposal65FixExecuted;
 
+    /**
+     * @notice Borrow cap (in USD) set by admin across all markets for users. Defaults to zero which corresponds to unlimited borrowing.
+     *  0 indicates unlimited user borrowing allowed
+     */
+    uint userBorrowCap;
+
     /// @notice Accounting storage mapping account addresses to how much COMP they owe the protocol.
     mapping(address => uint) public compReceivable;
 }
