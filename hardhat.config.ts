@@ -13,6 +13,10 @@ const config: HardhatUserConfig = {
       url: process.env.BSC_RPC || "https://bsc-dataseed.binance.org/",
       accounts: [process.env.PRIVATE_KEY],
     },
+    kcc: {
+      url: process.env.KCC_RPC || "https://rpc-mainnet.kcc.network",
+      accounts: [process.env.PRIVATE_KEY],
+    }
   },
   etherscan: {
     apiKey: process.env.ETHERSCAN_API_KEY,
