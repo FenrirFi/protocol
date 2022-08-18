@@ -12,10 +12,10 @@ const CTOKEN_DECIMALS = 8;
 
 // CToken Params
 const params = {
-  underlying: "0x14016E85a25aeb13065688cAFB43044C2ef86784",
-  irModel: "0x243415ce19991095b2105ba50d4cBa3D1de32695",
-  name: "Fenrir TUSD",
-  symbol: "fTUSD",
+  underlying: "0x69fdb77064ec5c84FA2F21072973eB28441F43F3",
+  irModel: "0xC115a318D8107491d27c627E0E2bD98F52a3BC53",
+  name: "Fenrir Tethys",
+  symbol: "fTETHYS",
   decimals: CTOKEN_DECIMALS,
   unitrollerAddr: deployments.Unitroller,
   implementation: delegate,

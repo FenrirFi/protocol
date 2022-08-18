@@ -1388,12 +1388,12 @@ contract Comptroller is ComptrollerV7Storage, ComptrollerInterface, ComptrollerE
      * @return The amount of COMP which was NOT transferred to the user
      */
     function grantCompInternal(address user, uint amount) internal returns (uint) {
-        // Comp comp = Comp(getCompAddress());
-        // uint compRemaining = comp.balanceOf(address(this));
-        // if (amount > 0 && amount <= compRemaining) {
-        //     comp.transfer(user, amount);
-        //     return 0;
-        // }
+        Comp comp = Comp(getCompAddress());
+        uint compRemaining = comp.balanceOf(address(this));
+        if (amount > 0 && amount <= compRemaining) {
+            comp.transfer(user, amount);
+            return 0;
+        }
         return amount;
     }
 
@@ -1481,6 +1481,6 @@ contract Comptroller is ComptrollerV7Storage, ComptrollerInterface, ComptrollerE
      * @return The address of COMP
      */
     function getCompAddress() public view returns (address) {
-        return 0xA919C7eDeAb294DD15939c443BCacA1FA1a1850f;
+        return 0x04C56b9bfB26584331B477357f9046C195231809;
     }
 }
